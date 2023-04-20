@@ -1,0 +1,171 @@
+#importation des biblios nécessaires
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+import sklearn
+
+#importation et visualisation de dataset "heart.csv"
+#Importation de dataset
+
+data = pd.read_csv("C:/Users/pc/Desktop/heart.csv")
+
+#Afficher les 5 premiers et derniers enregistrements
+
+data.head()
+
+data.tail()
+
+#Voir la dimention du dataset
+
+data.shape
+#output : (918, 12)
+
+#Savoir les types de données de chqaue colonne
+
+data.dtypes
+
+data.columns
+
+data.describe()
+
+#Vérifier si notre dataset est besoin du nettoyage
+
+data.info()
+
+data.isna().sum()
+
+data.duplicated().sum()
+
+#heureusement la dataset est bonne à utiliser telle qu'elle est, ni duplicats, ni vide sont été détectées.
+
+#Création du Modèle
+#Nous divisons nos données en 2 ensembles: train et test. Nous allons entrainer notre modèle sur train afin de vérifier sur test.
+
+train, test = train_test_split(data,test_size=0.2,random_state= 4)
+
+#Visualisons nos différentes données numériques
+
+train_data_num = train[["Age", "RestingBP", "Cholesterol", "MaxHR", "Oldpeak"]]
+for i in train_data_num.columns:
+    plt.hist(train_data_num[i])
+    plt.title(i)
+    plt.show()
+
+#Visualisons nos différentes données qualitatives
+
+train_data_quali = train[['Sex', 'ChestPainType', 'FastingBS', 'RestingECG', 'ExerciseAngina', 'ST_Slope']]
+for info in train_data_quali.columns:
+    sns.barplot(x=train_data_quali[info].value_counts().index, y=train_data_quali[info].value_counts()).set_title(info)
+    plt.show()
+
+#Afficher les dimentions et les pourcentages de "train" et "test".
+
+train.shape
+#output : (734, 12)
+
+len(train)*100/len(data)
+#79.95642701525054 càd 80% pour le train
+
+test.shape
+#output : (184, 12)
+
+len(test)*100/len(data)
+#20.043572984749456 càd 20% pour le test
+
+#Entrainer le modèle
+#Pour entrainer nos modèles, il va falloir convertir nos données qualitatives en données numériques en utilisant "get_dummies".
+
+train = pd.get_dummies(train)
+test = pd.get_dummies(test)
+
+#Vérifions que les données ont bien été remplacées.
+
+train.head(50)
+
+#C'est le moment. Nous allons entrainer notre modèle.
+
+x_train = train.drop(columns = ["HeartDisease"])
+y_train = train["HeartDisease"]
+
+x_test = test.drop(columns = ["HeartDisease"])
+y_test = test["HeartDisease"]
+
+#Tester le modèle
+#En faisant nos recherches, nous avons remarqué que beaucoup de gens utilisaient le paramètre max_iter de LogisticRegression alors nous avons décidé d'en tester quelques uns afin de trouver le nombre qui va maximiser notre résultat (on pense que le plus sera le mieux). Nous essayions max_iter avec 500 et il y avait des erreurs. Fonctionne avec 1000 et plus. Fonctionne à partir de 639. On peut voir que pour ce scénario, max_iter n'a pas d'importance
+
+for i in range(1000,20000,2500):
+    Log_Reg = LogisticRegression(max_iter=i)
+    modele=Log_Reg.fit(x_train, y_train)
+    print("Précision train:",modele.score(x_train, y_train),"\n","Précision test:",modele.score(x_test,y_test))
+
+#Output : {
+Précision train: 0.8692098092643051 
+ Précision test: 0.8804347826086957
+Précision train: 0.8692098092643051 
+ Précision test: 0.8804347826086957
+Précision train: 0.8692098092643051 
+ Précision test: 0.8804347826086957
+Précision train: 0.8692098092643051 
+ Précision test: 0.8804347826086957
+Précision train: 0.8692098092643051 
+ Précision test: 0.8804347826086957
+Précision train: 0.8692098092643051 
+ Précision test: 0.8804347826086957
+Précision train: 0.8692098092643051 
+ Précision test: 0.8804347826086957
+Précision train: 0.8692098092643051 
+ Précision test: 0.8804347826086957
+ }
+
+#Utiliser le Modèle
+#On peut maintenant utiliser notre modèle pour faire des prédictions avec une pourcentage de plus que 88% de succés.
+
+#On écrit la nouvelle dataset en format csv qu'on va la faire une prédiction, 5 personnes par exemple.
+
+import csv
+
+# 1. Ouvrir un fichier en mode écriture en Python
+f = open('df.csv', 'w')
+
+# 2. Créez un objet CSV writer
+writer = csv.writer(f)
+
+# 3. Ecrire des données dans un fichier CSV
+#Les noms des colonnes
+new_data = ['Age', 'RestingBP', 'Cholesterol', 'FastingBS', 'MaxHR', 'Oldpeak',
+       'Sex_F', 'Sex_M', 
+       'ChestPainType_ASY', 'ChestPainType_ATA', 'ChestPainType_NAP', 'ChestPainType_TA',
+       'RestingECG_LVH', 'RestingECG_Normal', 'RestingECG_ST',
+       'ExerciseAngina_N', 'ExerciseAngina_Y',
+       'ST_Slope_Down','ST_Slope_Flat', 'ST_Slope_Up']
+writer.writerow(new_data)
+
+#Les enregistrements ligne par ligne
+new_data = [41,140,289,0,172,0,   0,1,   0,1,0,0,   1,0,0,   0,1,   0,1,0]
+writer.writerow(new_data)
+new_data = [20,190,279,1,132,0,   0,1,   0,0,1,0,   0,1,0,   1,0,   0,0,0]
+writer.writerow(new_data)
+new_data = [57,140,289,0,172,0,   1,0,   1,0,0,0,   0,0,1,   0,1,   0,1,0]
+writer.writerow(new_data)
+new_data = [27,82,260,1,132,0,   0,1,   0,0,0,0,   0,0,1,   0,1,   0,1,0]
+writer.writerow(new_data)
+new_data = [4,132,190,0,102,0,   1,0,   0,0,1,0,   1,0,0,   0,0,   0,0,1]
+writer.writerow(new_data)
+
+# 4. Fermez un fichier ouvert avec open en Python
+f.close()
+
+#importer la nouvelle dataset.
+
+df = pd.read_csv("df.csv")
+
+#et en fin, on prédit la possibilité pour chaqu'un des 3 personnes d'avoir des maladies cardiaques.
+
+predictions = modele.predict(df)
+predictions
+
+#Output : array([0, 0, 1, 1, 0], dtype=int64)
